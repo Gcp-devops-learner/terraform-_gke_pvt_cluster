@@ -1,0 +1,80 @@
+# Enable A Shared VPC in the host project
+resource "google_compute_shared_vpc_host_project" "host" {
+  project = var.project # Replace this with your host project ID in quotes
+}
+
+# To attach a first service project with host project 
+resource "google_compute_shared_vpc_service_project" "service1" {
+  host_project    = google_compute_shared_vpc_host_project.host.project
+  service_project = var.service_project1 # Replace this with your service project ID in quotes
+
+  depends_on = [google_compute_shared_vpc_host_project.host]
+}
+
+#To attach another secon service project with host project 
+resource "google_compute_shared_vpc_service_project" "service2" {
+  host_project    = google_compute_shared_vpc_host_project.host.project
+  service_project = var.service_project2 # Replace this with your service project ID in quotes
+}
+
+
+
+# Shared Network to attach 
+data "google_compute_network" "network" {
+  name    = "my-network1"
+  project = var.project
+}
+
+
+# Shared Sub-Networks to attach 
+data "google_compute_subnetwork" "subnet" {
+  name    = "subnet1"
+  project = var.project
+  region  = "us-east1"
+}
+
+data "google_compute_subnetwork" "subnet1" {
+  name    = "subnet2"
+  project = var.project
+  region  = "us-east1"
+}
+###==========================================================#####
+
+
+# Create VM in Service Project: ServiceA
+resource "google_compute_instance" "vm_machine1" {
+  project      = var.service_project1
+  zone         = "us-east1-c"
+  name         = "my-demo-vm-1"
+  machine_type = "e2-medium"
+
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-11"
+    }
+  }
+  network_interface {
+    subnetwork = data.google_compute_subnetwork.subnet.self_link
+
+  }
+}
+
+# ## Create a VM in Service Project: My First Project
+
+# resource "google_compute_instance" "vm_machine2" {
+#   project      = var.service_project2
+#   zone         = "us-east1-c"
+#   name         = "my-demo-vm-2"
+#   machine_type = "e2-medium"
+
+#   boot_disk {
+#     initialize_params {
+#       image = "debian-cloud/debian-11"
+#     }
+#   }
+#   network_interface {
+#     subnetwork = data.google_compute_subnetwork.subnet1.self_link
+
+#   }
+# }
+  
